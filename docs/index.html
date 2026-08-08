@@ -1,0 +1,160 @@
+﻿<html>
+<meta charset="UTF-8">
+
+<head>
+  <title>Centrifugo quick start</title>
+</head>
+
+<body>
+  <div id="counter">-</div>
+  <script src="https://unpkg.com/centrifuge@5.4.0/dist/centrifuge.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="/frontend/functions.js"></script>
+  <script type="text/javascript">
+    const container = document.getElementById('counter');
+
+    const centrifuge = new Centrifuge("wss://91.199.32.249/connection/websocket", {
+      token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM3MjIiLCJleHAiOjE3ODY3ODg0MTgsImlhdCI6MTc4NjE4MzYxOH0.hlHehNkwPks55cg5vPMTVAeN4G0m-7z895qhN6jYavs"
+    });
+
+    centrifuge.on('connecting', function (ctx) {
+      console.log(`connecting: ${ctx.code}, ${ctx.reason}`);
+    }).on('connected', function (ctx) {
+      console.log(`connected over ${ctx.transport}`);
+
+      getPatternList();
+
+    }).on('disconnected', function (ctx) {
+      console.log(`disconnected: ${ctx.code}, ${ctx.reason}`);
+    }).connect();
+
+
+    const sub = centrifuge.newSubscription("channel");
+
+    sub.on('publication', function (ctx) {
+      container.innerHTML = ctx.data.value;
+      document.title = ctx.data.value;
+    }).on('subscribing', function (ctx) {
+      console.log(`subscribing: ${ctx.code}, ${ctx.reason}`);
+    }).on('subscribed', function (ctx) {
+      console.log('subscribed', ctx);
+    }).on('unsubscribed', function (ctx) {
+      console.log(`unsubscribed: ${ctx.code}, ${ctx.reason}`);
+    }).subscribe();
+
+
+    async function sendText(parametrs = '') {
+
+      data = $("#sendTextarea")[0].value
+
+      if (parametrs != '') {
+        data = JSON.stringify(parametrs)
+      }
+
+      try {
+        // 3. Отправляем данные и ждем ответ
+
+        const response = await centrifuge.rpc('data', data);
+        // const response = await centrifuge.rpc('data', JSON.stringify(parametrs));
+
+        if (parametrs.actionApi == 'testerAPI/savePattern') {
+          getListPatterns(response)
+        } else if (parametrs.actionApi == 'testerAPI/getPatterns') {
+          getListPatterns(response)
+        } else {
+          $("#receivedTextArea").val(JSON.stringify(response));
+        }
+
+
+        console.log('Ответ от сервера:', response);
+      } catch (err) {
+        console.error('Ошибка при отправке RPC:', err);
+
+        sendText()
+      }
+    }
+
+    $(document).ready(function () {
+      // Добавление нового поля
+      $('#add-field').click(function () {
+        var newField = '<div class="field-row"><input type="text" name="parametr" placeholder="parametr">|<textarea type="text" name="valuem" placeholder="value"></textarea> <button type="button" class="remove-field">Удалить</button></div>';
+        $('#fields-container').append(newField);
+      });
+
+      $('#save-endpoint').click(function () {
+
+        nameEndPoint = $('#endpoint-save-name')[0]
+        if (nameEndPoint.value == '') {
+          alert('empty name endpoint');
+          return
+        }
+
+        apiConfig = $('#api-config')[0].innerHTML
+
+        apiPattern = getApiPattern()
+
+        parametrs = {
+          'actionApi': 'testerAPI/savePattern',
+          'patternTitle': nameEndPoint.value,
+          'patternText': JSON.stringify(apiPattern),
+        }
+
+        sendText(parametrs)
+
+      });
+
+      $('#set-query').click(function () {
+        list = {}
+
+        $('.field-row').each(function (index, element) {
+
+          parametrEl = element.querySelector('[name="parametr"]')
+          valueEl = element.querySelector('[name="valuem"]');
+
+          list[parametrEl.value] = valueEl.value
+        });
+
+        list['actionApi'] = $("#endpoint-name-value")[0].value
+        $("#sendTextarea").val(JSON.stringify(list));
+      });
+
+      // Удаление поля (используем делегирование событий, так как кнопка создана динамически)
+      $('#fields-container').on('click', '.remove-field', function () {
+        $(this).parent('.field-row').remove();
+      });
+    });
+  </script>
+</body>
+
+<input type="text" id="endpoint-save-name" value="" placeholder="Заголовок для сохранения">
+<div id="api-config">
+  <div id="fields-container">
+    <div class="field-row2">
+      <label>API Endpoint<label>
+          <input type="text" id="endpoint-name" name="parametr" value="endpoint" placeholder="/users">
+          <input type="text" id="endpoint-name-value" name="valuem" placeholder="/users">
+          <button type="button" class="remove-field">Удалить</button>
+    </div>
+  </div>
+  <button type="button" id="add-field">Добавить поле</button>
+  <button type="button" id="set-query">Запрос</button>
+  <button type="button" id="save-endpoint">Сохранить endpoint</button>
+
+  <hr>
+</div>
+
+<div id="pattern-list">
+</div>
+
+
+<textarea id="sendTextarea"
+  style="width: 1111px; height: 232px;">{"actionApi":"users/registration","typeRegistration":1,"email":"ada@mail.com","password":"password","invalidParams":"sdf","nxt":1}</textarea>
+<br>
+<button onclick="sendText()">SendText</button>
+<hr>
+
+
+
+<textarea style="width: 1111px; height: 232px;" id="receivedTextArea"></textarea>
+
+</html>
