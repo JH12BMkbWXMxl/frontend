@@ -11,6 +11,7 @@
   <script src="centrifuge.js"></script>
   <script src="jquery.min.js"></script>
   <script src="/frontend/functions.js"></script>
+  <script src="getIp.js"></script>
 
   <script type="text/javascript">
 
@@ -72,11 +73,10 @@
         wsData = 'ws://localhost/connection/websocket';
         httData = '/http/centrifugo/connection_token'
     } else {
-        getIp = require('ip.js');
 
         alert(getIp());
-        wsData = "wss://"+ ip +"/connection/websocket"
-        httData = 'https://'+ ip +'/http'
+        wsData = "wss://"+ getIp() +"/connection/websocket"
+        httData = 'https://'+ getIp() +'/http'
     }
 
     const centrifuge = new Centrifuge(wsData, {
