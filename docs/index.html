@@ -74,9 +74,8 @@
         httData = '/http/centrifugo/connection_token'
     } else {
 
-        alert(getIp());
-        wsData = "wss://"+ getIp() +"/connection/websocket"
-        httData = 'https://'+ getIp() +'/http'
+        wsData = "wss://"+ getIP() +"/connection/websocket"
+        httData = 'https://'+ getIP() +'/http'
     }
 
     const centrifuge = new Centrifuge(wsData, {
