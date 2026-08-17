@@ -1,11 +1,14 @@
 function getListPatterns(response) {
     //listPattern = JSON.parse(response.data.message.text);
 
+    html = "<table><tbody>";
+    $("#pattern-list").append(html);
+
     for (const [key, value] of Object.entries(response.data.message)) {
         value;
 
         var newField =
-            '<div onclick="pastePattern(' +
+            '<tr><td><div onclick="pastePattern(' +
             value.id +
             ", '" +
             value.titleName +
@@ -18,11 +21,14 @@ function getListPatterns(response) {
             '" value="' +
             encodeURIComponent(value.text) +
             '">' +
-            '<button type="button" onclick="deletePattern(' +
+            '</td><td><button type="button" onclick="deletePattern(' +
             value.id +
-            ')">Удалить</button></div></div>';
+            ')">Удалить</button></div></div></td></tr>';
         $("#pattern-list").append(newField);
     }
+
+    html = "</tbody></table>";
+    $("#pattern-list").append(html);
 }
 
 function pastePattern(id, title) {
@@ -53,6 +59,7 @@ function deletePattern(id) {
     parametrs = {
         actionApi: "testerAPI/deletePattern",
         id: id,
+        password: $("#testerKeyCode").val(),
     };
     sendText(parametrs);
 }
