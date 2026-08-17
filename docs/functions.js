@@ -44,7 +44,7 @@ function pastePattern(id, title) {
             key +
             '">|<textarea type="text" name="valuem">' +
             value +
-            '</textarea> <button type="button" class="remove-field">Удалить</button></div><hr>';
+            '</textarea> <button type="button" class="remove-field">Удалить</button></div>';
         $("#fields-container").append(newField);
     }
 }
