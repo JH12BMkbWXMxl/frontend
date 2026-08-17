@@ -5,10 +5,22 @@ function getListPatterns(response) {
         value;
 
         var newField =
-            '<div onclick="pastePattern('+ value.id +', \''+ value.titleName +'\')" class="field-row1">'+ value.id +
-            '|'+ value.title +
-             '<input type="hidden" id="text_pattern_'+ value.id +'" value="'+ encodeURIComponent(value.text)  +'">'+
-             '<button type="button" onclick="deletePattern('+ value.id +')">Удалить</button></div></div>';
+            '<div onclick="pastePattern(' +
+            value.id +
+            ", '" +
+            value.titleName +
+            '\')" class="field-row1">' +
+            value.id +
+            "|" +
+            value.title +
+            '<input type="hidden" id="text_pattern_' +
+            value.id +
+            '" value="' +
+            encodeURIComponent(value.text) +
+            '">' +
+            '<button type="button" onclick="deletePattern(' +
+            value.id +
+            ')">Удалить</button></div></div>';
         $("#pattern-list").append(newField);
     }
 }
@@ -30,13 +42,14 @@ function pastePattern(id, title) {
         var newField =
             '<div class="field-row"><input type="text" name="parametr" value="' +
             key +
-            '">|<textarea type="text" name="valuem">'+ value +'</textarea> <button type="button" class="remove-field">Удалить</button></div><hr>';
+            '">|<textarea type="text" name="valuem">' +
+            value +
+            '</textarea> <button type="button" class="remove-field">Удалить</button></div><hr>';
         $("#fields-container").append(newField);
     }
 }
 
-function deletePattern(id)
-{
+function deletePattern(id) {
     parametrs = {
         actionApi: "testerAPI/deletePattern",
         id: id,
