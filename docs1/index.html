@@ -7,9 +7,10 @@
 
 <body>
   <div id="counter">-</div>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/purecss@3.0.0/build/pure-min.css" integrity="sha384-X38yfunGUhNzHpBaEBsWLO+A0HDYOQi8ufWDkZ0k9e0eXz/tH3II7uKZ9msv++Ls" crossorigin="anonymous">
   <script src="centrifuge.js"></script>
   <script src="jquery.min.js"></script>
-  <script src="functions.js"></script>
+  <script src="/frontend/functions.js"></script>
   <script type="text/javascript">
 
     function littleTroll()
@@ -21,18 +22,53 @@
 
     //x
 
-    const container = document.getElementById('counter');
-	
-	const ip = '91.199.32.249;
+    function changelogState(string)
+    {
+        const today = new Date();
+        $('#logConnection').html(today + ' -- '+ string)
+    }
 
-    const centrifuge = new Centrifuge("wss://"+ ip +"/connection/websocket", {
+    async function getPing()
+    {
+        
+      
+        parametrs = {
+          actionApi : 'ping'
+        };
+        data = JSON.stringify(parametrs)
+
+        timeStart = Date.now()
+
+        try {
+          // 3. Отправляем данные и ждем ответ
+
+          const response = await centrifuge.rpc('data', data);
+          // const response = await centrifuge.rpc('data', JSON.stringify(parametrs));
+        
+          timeStop = Date.now()
+
+          ms = timeStop - timeStart
+          changelogState(' ping > '+ timeStart + ' | >'+ timeStop + ' | > '+ ms + ': ms')
+        } catch (err) {
+          console.error('Ошибка при отправке RPC:', err);
+
+
+        }
+
+        setTimeout('getPing()', 5000)
+    }
+
+    const container = document.getElementById('counter');
+
+    const centrifuge = new Centrifuge("ws://localhost/connection/websocket", {
     // Вызывается при подключении и автоматически перед истечением exp токена
       getToken: async () => {
        // const res = await fetch("/http/centrifugo/connection_token");
        // const data = await res.json();
 
+        changelogState(' > /http/centrifugo/connection_token')
 
-        const url = 'https://'+ ip +'/http';
+        const url = '/http/centrifugo/connection_token';
   
         const payload = {
           'littleTroll': littleTroll(),
@@ -51,12 +87,17 @@
 
           // Check if the server returned a 200-299 status code
           if (!response.ok) {
+            changelogState(' > /http/centrifugo/connection_token ->  error ->'+ response.status)
             throw new Error(`HTTP error! Status: ${response.status}`);
           }
+
+          
 
           const data = await response.json();
 
           dataM = data.message
+
+          changelogState(' > /http/centrifugo/connection_token ->  token ->'+ dataM.token)
 
           dataM
           return dataM.token;
@@ -67,16 +108,29 @@
 
 
       },
+      // Minimum delay between reconnect attempts in milliseconds (default: 500)
+      minReconnectDelay: 500,
+      // Maximum delay between reconnect attempts in milliseconds (default: 20000)
+      maxReconnectDelay: 5000,
     });
+    
 
     centrifuge.on('connecting', function (ctx) {
+      changelogState(`socket connecting: ${ctx.code}, ${ctx.reason}`)
       console.log(`connecting: ${ctx.code}, ${ctx.reason}`);
     }).on('connected', function (ctx) {
+      changelogState(`connected over ${ctx.transport}`)
+      
+      getPing()
+
       console.log(`connected over ${ctx.transport}`);
 
       getPatternList();
 
     }).on('disconnected', function (ctx) {
+      changelogState(`disconnected: ${ctx.code}, ${ctx.reason}`)
+
+
       console.log(`disconnected: ${ctx.code}, ${ctx.reason}`);
     }).connect();
 
@@ -129,7 +183,8 @@
     $(document).ready(function () {
       // Добавление нового поля
       $('#add-field').click(function () {
-        var newField = '<div class="field-row"><input type="text" name="parametr" placeholder="parametr">|<textarea type="text" name="valuem" placeholder="value"></textarea> <button type="button" class="remove-field">Удалить</button></div>';
+        var newField = '<div class="field-row"><input type="text" name="parametr" placeholder="parametr">|<textarea type="text" name="valuem" placeholder="value">'+
+          '<br></textarea> <button type="button" class="remove-field">Удалить</button></div>';
         $('#fields-container').append(newField);
       });
 
@@ -177,36 +232,65 @@
     });
   </script>
 </body>
+<style>
+  .scroll-box {
+    width: 45%;
+    height: 400px; /* Ограничиваем высоту блока */
+    overflow: auto; /* Включаем скролл при переполнении */
+    border: 1px solid #ccc;
+    padding: 10px;
+  }
+</style>
 
-<input type="text" id="endpoint-save-name" value="" placeholder="Заголовок для сохранения">
-<div id="api-config">
-  <div id="fields-container">
-    <div class="field-row2">
-      <label>API Endpoint<label>
-          <input type="text" id="endpoint-name" name="parametr" value="endpoint" placeholder="/users">
-          <input type="text" id="endpoint-name-value" name="valuem" placeholder="/users">
-          <button type="button" class="remove-field">Удалить</button>
+<div class="pure-g">
+  <div class="pure-u-1-2"></div>
+  <div id="logConnection" style="border: 2px solid #333333;" class="pure-u-1-2">Лог подключения</div>
+
+</div>
+
+<div class="pure-g">
+    <div class="pure-u-1-2"> 
+      <div class="pure-u-1-1"> 
+        <input type="text" id="endpoint-save-name" value="" placeholder="Заголовок для сохранения">
+        <div id="api-config">
+          <div id="fields-container">
+            <div class="field-row2">
+              <label>API Endpoint<label>
+                  <input type="text" id="endpoint-name" name="parametr" value="endpoint" placeholder="/users">
+                  <input type="text" id="endpoint-name-value" name="valuem" placeholder="/users">
+                  <button type="button" class="remove-field">Удалить</button>
+            </div>
+          </div>
+          <button type="button" id="add-field">Добавить поле</button>
+          <button type="button" id="set-query">Запрос</button>
+          <button type="button" id="save-endpoint">Сохранить endpoint</button>
+
+          <hr>
+        </div>  
+      </div> 
+      <div class="pure-u-1-1"> 
+        <textarea id="sendTextarea"
+          style="width: 98%; height: 232px;">{"actionApi":"users/registration","typeRegistration":1,"email":"ada@mail.com","password":"password","invalidParams":"sdf","nxt":1}</textarea>
+        <br>
+        <button onclick="sendText()">SendText</button> </div> 
+      <div class="pure-u-1-1"> <textarea style="width: 98%; height: 232px;" id="receivedTextArea"></textarea> </div> 
     </div>
-  </div>
-  <button type="button" id="add-field">Добавить поле</button>
-  <button type="button" id="set-query">Запрос</button>
-  <button type="button" id="save-endpoint">Сохранить endpoint</button>
+    <div class="pure-u-1-2 scroll-box"> 
+      <div id="pattern-list"></div> 
+    </div>
 
-  <hr>
-</div>
-
-<div id="pattern-list">
 </div>
 
 
-<textarea id="sendTextarea"
-  style="width: 1111px; height: 232px;">{"actionApi":"users/registration","typeRegistration":1,"email":"ada@mail.com","password":"password","invalidParams":"sdf","nxt":1}</textarea>
-<br>
-<button onclick="sendText()">SendText</button>
+
+
+
+
+
 <hr>
 
 
 
-<textarea style="width: 1111px; height: 232px;" id="receivedTextArea"></textarea>
+
 
 </html>

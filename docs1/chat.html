@@ -1,0 +1,81 @@
+<html>
+<meta charset="UTF-8">
+
+<head>
+    <title>Centrifugo quick start</title>
+</head>
+
+<body>
+    <div id="counter">-</div>
+    <script src="https://unpkg.com/centrifuge@5.4.0/dist/centrifuge.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="/src/mvc/view/js/functions.js"></script>
+    <script type="text/javascript">
+        const container = document.getElementById('counter');
+
+        const centrifuge = new Centrifuge("ws://localhost/connection/websocket", {
+            token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM3MjIiLCJleHAiOjE3ODMwNjY2NzIsImlhdCI6MTc4MjQ2MTg3Mn0.uhBt4Ml1NJC6BHcKTEcE5x0Whrvj57_BcEJ9MltLOO0"
+        });
+
+        centrifuge.on('connecting', function (ctx) {
+            console.log(`connecting: ${ctx.code}, ${ctx.reason}`);
+        }).on('connected', function (ctx) {
+            console.log(`connected over ${ctx.transport}`);
+
+            //getPatternList();
+
+        }).on('disconnected', function (ctx) {
+            console.log(`disconnected: ${ctx.code}, ${ctx.reason}`);
+        }).connect();
+
+
+
+
+        $(document).ready(function () {
+            $('#connectedChat').click(function () {
+
+                roomName = $("#room-name")[0].value
+                window.sub = sub = centrifuge.newSubscription(roomName);
+
+                sub.on('publication', function (ctx) {
+                    //container.innerHTML = ctx.data.value;
+                    //document.title = ctx.data.value;
+
+                    $("#receivedChat").val(JSON.stringify(ctx));
+                }).on('subscribing', function (ctx) {
+                    console.log(`subscribing: ${ctx.code}, ${ctx.reason}`);
+                }).on('subscribed', function (ctx) {
+
+                    console.log('subscribed', ctx);
+
+                }).on('unsubscribed', function (ctx) {
+                    console.log(`unsubscribed: ${ctx.code}, ${ctx.reason}`);
+                }).subscribe();
+            });
+
+            $('#sendText').click(function () {
+                textChat = $("#textChat")[0].value
+                window.sub.publish({ "message": textChat }).then(function (res) {
+                    //console.log('Successfully published:', res.text);
+                    //console.log('Successfully published:', res.status);
+
+                    //$("#receivedChat").val(JSON.stringify(res.data));
+                }, function (err) {
+                    console.log('Publish failed:', err);
+                });
+            });
+        });
+    </script>
+</body>
+
+<input type="text" id="room-name" value="" placeholder="Имя комнаты">
+<button type="button" id="connectedChat">Подключиться к чату</button>
+<hr>
+
+<textarea style="width: 1111px; height: 232px;" id="textChat"></textarea>
+<textarea style="width: 1111px; height: 232px;" id="receivedChat"></textarea>
+
+
+<button type="button" id="sendText">Подключиться к чату</button>
+
+</html>
